@@ -1,7 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from connectMemory import qa_chain #type: ignore
 
-api = FastAPI()
+app = FastAPI()
 
-@api.get("/")
-def index():
-    return {"message": "FastAPI works"}
+class QueryRequest(BaseModel):
+    question: str
+
+@app.post("/chat/")
+async def chat(query: QueryRequest):
+    try:
+        response = qa_chain.invoke(query.question)
+        return {"answer": response["result"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/")
+async def root():
+    return {"message": "Chatbot API is running!"}
